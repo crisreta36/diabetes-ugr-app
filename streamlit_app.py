@@ -51,8 +51,9 @@ if enviar:
                 st.success('Clasificación negativa del modelo')
             st.metric('Puntuación del modelo (no calibrada)', f'{puntuacion:.3f}')
             st.caption(f'Umbral utilizado: {UMBRAL:.2f}. El resultado experimental no permite confirmar ni descartar diabetes.')
-        except Exception:
-            st.error('No se pudo cargar el modelo o generar la clasificación. Revisá los archivos y las dependencias del despliegue.')
+        except Exception as e:
+            st.error('No se pudo cargar el modelo o generar la clasificación.')
+            st.exception(e)
 
 st.divider()
 st.caption('Fuente: Pima Indians Diabetes Database. Proyecto académico sin validación clínica.')
