@@ -1,4 +1,4 @@
-"""Demostración académica: clasificación de diabetes (UGR)."""
+"""Demostración académica: clasificación binaria de diabetes (UGR)."""
 from pathlib import Path
 import joblib
 import numpy as np
@@ -17,8 +17,9 @@ def cargar_modelo():
 
 st.title('Clasificación de diabetes · TP Ingeniería de Software')
 st.write('**Demostración académica de CRISP-DM** con el modelo Random Forest del trabajo grupal.')
-st.warning('No es un diagnóstico médico ni una herramienta clínica validada. No ingreses datos personales identificatorios.')
+st.warning('Esta herramienta es una demostración académica: no diagnostica diabetes ni prediabetes, ni reemplaza una evaluación médica. No ingreses datos personales identificatorios.')
 
+st.subheader('1. Ingresá los datos de prueba')
 with st.form('clasificacion'):
     col1, col2 = st.columns(2)
     with col1:
@@ -33,7 +34,7 @@ with st.form('clasificacion'):
         edad = st.number_input('Edad (años)', min_value=1, max_value=120, value=35, step=1)
     enviar = st.form_submit_button('Ejecutar clasificación', type='primary')
 
-st.caption('En glucosa, presión, pliegue, insulina e IMC, un valor 0 se interpreta como dato no medido, según la preparación del notebook.')
+st.caption('En glucosa, presión, pliegue, insulina e IMC, el valor 0 se interpreta como dato no medido, siguiendo el preprocesamiento del proyecto.')
 
 if enviar:
     valores = [embarazos, glucosa, presion, pliegue, insulina, imc, antecedentes, edad]
@@ -45,15 +46,29 @@ if enviar:
         try:
             modelo = cargar_modelo()
             puntuacion = float(modelo.predict_proba(fila)[0, 1])
+            if not np.isfinite(puntuacion) or not 0 <= puntuacion <= 1:
+                raise ValueError('El modelo devolvió una puntuación fuera del rango esperado.')
+
+            st.subheader('2. Resultado de la clasificación')
             if puntuacion >= UMBRAL:
-                st.error('Clasificación positiva del modelo')
+                st.error('**Clasificación positiva:** el modelo identificó patrones asociados con la categoría «diabetes» del conjunto de entrenamiento.')
+                st.write('**¿Qué significa?** La puntuación superó el umbral elegido para este trabajo. **No significa que la persona tenga diabetes**.')
+                st.info('**Orientación:** si se tratara de una situación real, corresponde consultar a un profesional de salud para una evaluación y, si procede, estudios diagnósticos.')
             else:
-                st.success('Clasificación negativa del modelo')
-            st.metric('Puntuación del modelo (no calibrada)', f'{puntuacion:.3f}')
-            st.caption(f'Umbral utilizado: {UMBRAL:.2f}. El resultado experimental no permite confirmar ni descartar diabetes.')
+                st.success('**Clasificación negativa:** el modelo no alcanzó el umbral para asignar la categoría «diabetes».')
+                st.write('**¿Qué significa?** La puntuación quedó por debajo del umbral elegido. **No significa que la persona no tenga diabetes** ni permite descartarla.')
+                st.info('**Orientación:** si existen síntomas, antecedentes o inquietudes reales, corresponde consultar a un profesional de salud independientemente de esta clasificación.')
+
+            a, b = st.columns(2)
+            a.metric('Puntuación del modelo', f'{puntuacion:.3f}')
+            b.metric('Umbral de decisión', f'{UMBRAL:.2f}')
+            st.progress(puntuacion, text='Puntuación de la clase positiva (0 a 1)')
+            st.caption('La puntuación no está calibrada como probabilidad clínica. El umbral 0,40 es una decisión del proyecto, no un criterio diagnóstico.')
+            st.caption('El modelo distingue dos clases (0 y 1). **No identifica prediabetes** ni dispone de una categoría intermedia validada.')
         except Exception as e:
             st.error('No se pudo cargar el modelo o generar la clasificación.')
             st.exception(e)
 
 st.divider()
-st.caption('Fuente: Pima Indians Diabetes Database. Proyecto académico sin validación clínica.')
+st.caption('Fuente: Pima Indians Diabetes Database. Proyecto académico sin validación clínica. No se almacenan datos mediante este código.')
+
